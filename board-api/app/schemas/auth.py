@@ -3,15 +3,20 @@ from pydantic import BaseModel, EmailStr
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    full_name: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
 
 class UserOut(BaseModel):
     id: str
     email: EmailStr
-    full_name: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+        "arbitrary_types_allowed": True,
+    }
 
 class Token(BaseModel):
     access_token: str
