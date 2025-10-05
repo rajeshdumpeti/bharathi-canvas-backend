@@ -1,17 +1,20 @@
-from passlib.context import CryptContext
 from datetime import datetime, timedelta
-from jose import JWTError, jwt
-from app.core.config import settings
+from jose import jwt
+from passlib.hash import pbkdf2_sha256  # <- length-safe, no 72-byte limit
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET_KEY = "umHJYaN1l4Bmrpz6oI1RG6XHeG+g7O9YDQPJ1nt64Xc="
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    # strong, length-safe, widely used
+    return pbkdf2_sha256.hash(password)
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return pbkdf2_sha256.verify(plain, hashed)
 
-def create_access_token(data: dict) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
-    to_encode = {**data, "exp": expire}
-    return jwt.encode(to_encode, settings.secret_key, algorithm="HS256")
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
