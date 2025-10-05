@@ -1,0 +1,23 @@
+[project]
+name = "board-api"
+version = "0.1.0"
+description = "Board microservice (Projects/Columns/Tasks)"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi==0.115.0",
+  "uvicorn[standard]==0.30.6",
+  "pydantic==2.9.2",
+  "pydantic-settings==2.5.2",
+  "SQLAlchemy==2.0.34",
+  "psycopg[binary,pool]==3.2.3",
+  "alembic==1.13.2",
+  "python-multipart==0.0.9",
+  "passlib[bcrypt]==1.7.4",
+  "pyjwt[crypto]==2.9.0",
+]
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"

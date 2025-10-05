@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.env
+.env.*
+.alembic_env
+.mypy_cache/
+.pytest_cache/
+dist/
+build/
+.coverage
+htmlcov/
+**/__pycache__/
+**/.DS_Store
