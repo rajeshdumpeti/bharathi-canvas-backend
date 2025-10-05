@@ -20,11 +20,12 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: postgresql+psycopg2://canvas:canvas@db:5432/canvas
+      DATABASE_URL: postgresql+psycopg2://canvas:canvas@localhost:5432/canvas
       APP_ENV: development
-      SECRET_KEY: change-this-in-prod-32bytes-min
+      SECRET_KEY: umHJYaN1l4Bmrpz6oI1RG6XHeG+g7O9YDQPJ1nt64Xc=
       ACCESS_TOKEN_EXPIRE_MINUTES: 60
-      CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
+      CORS_ORIGINS: 'http://localhost:5173,http://localhost:3000'
+
     ports:
       - "8000:8000"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
