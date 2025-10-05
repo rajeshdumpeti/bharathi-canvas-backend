@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from jose import jwt
+from jose import jwt, JWTError
 from passlib.hash import pbkdf2_sha256  # <- length-safe, no 72-byte limit
 
 SECRET_KEY = "umHJYaN1l4Bmrpz6oI1RG6XHeG+g7O9YDQPJ1nt64Xc="
@@ -18,3 +18,11 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def decode_access_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # expected to contain {"sub": "<email>", "exp": ...}
+        return payload
+    except JWTError as e:
+        raise ValueError("Invalid token") from e
