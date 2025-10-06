@@ -17,6 +17,21 @@ DEFAULT_COLS = [
     {"id": "done", "title": "Done"},
 ]
 
+# helper to seed default columns
+def _seed_default_columns(db, project_id):
+    DEFAULTS = [
+        ("to-do", "To Do"),
+        ("in-progress", "In Progress"),
+        ("validation", "Validation"),
+        ("done", "Done"),
+    ]
+
+    rows = [
+        BoardColumn(project_id=project_id, key=slug, title=title, pos=i)
+        for i, (slug, title) in enumerate(DEFAULTS)
+    ]
+    db.add_all(rows)
+    
 @router.get("/", response_model=list[ProjectOut])
 def list_projects(
     db: Session = Depends(get_db),
@@ -41,16 +56,8 @@ def create_project(
     db.commit()
     db.refresh(row)
 
-    # Seed default columns if none exist for this project
-    existing = db.query(BoardColumn).filter(BoardColumn.project_id == row.id).count()
-    if existing == 0:
-        for c in DEFAULT_COLS:
-            db.add(BoardColumn(
-                id=c["id"],    # if your model uses string id; if UUID, generate instead
-                title=c["title"],
-                project_id=row.id
-            ))
-        db.commit()
+    _seed_default_columns(db, row.id)
+    db.commit()
 
     return row
 
