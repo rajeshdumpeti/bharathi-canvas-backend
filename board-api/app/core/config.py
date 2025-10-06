@@ -29,14 +29,15 @@ class Settings(BaseSettings):
 
     @field_validator("database_url", mode="before")
     @classmethod
-    def assemble_db_url(cls, v: str | None, values: Any) -> str:
+    def assemble_db_url(cls, v: str | None, info):
         if v:
             return v
-        user = values.get("postgres_user", "canvas")
-        password = values.get("postgres_password", "canvas")
-        host = values.get("postgres_host", "localhost")
-        port = values.get("postgres_port", "5432")
-        db = values.get("postgres_db", "canvas")
+        data = info.data if hasattr(info, "data") else {}
+        user = data.get("postgres_user", "canvas")
+        password = data.get("postgres_password", "canvas")
+        host = data.get("postgres_host", "db")
+        port = data.get("postgres_port", "5432")
+        db = data.get("postgres_db", "canvas")
         return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
 
     @field_validator("cors_origins", mode="before")
