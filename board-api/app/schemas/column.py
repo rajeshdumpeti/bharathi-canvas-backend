@@ -1,11 +1,18 @@
 from pydantic import BaseModel
 from uuid import UUID
 
-class ColumnCreate(BaseModel):
+
+class BoardColumnBase(BaseModel):
     title: str
 
-class ColumnOut(BaseModel):
+
+class BoardColumnCreate(BoardColumnBase):
+    pass
+
+
+class BoardColumnOut(BoardColumnBase):
     id: UUID
     key: str
-    title: str
     pos: int
+
+    model_config = {"from_attributes": True}

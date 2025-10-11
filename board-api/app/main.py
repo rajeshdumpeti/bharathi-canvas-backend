@@ -6,6 +6,7 @@ from app.db.session import engine
 from app.db.base import Base
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.db.init_models import init_db
 
 
 app = FastAPI(title="Bharathi Canvas API", version="1.0", debug=True)
@@ -29,10 +30,10 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+
 @app.on_event("startup")
-def create_db_tables() -> None:
-    # This will create any missing tables based on your SQLAlchemy models
-    Base.metadata.create_all(bind=engine)
+def create_db_tables():
+    init_db()
 
 # Routers
 app.include_router(api_router, prefix="/api/v1")

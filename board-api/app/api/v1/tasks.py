@@ -1,153 +1,107 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from sqlalchemy import select
 from uuid import UUID
-from datetime import datetime
-from app.deps import get_db
-from app.models.project import Project
-from app.models.column import BoardColumn
+from app.deps import get_db, get_current_user
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskOut
-from app.services.story_id import next_story_id
+from app.models.project import Project
+import re
+router = APIRouter(prefix="/tasks", tags=["tasks"])
 
-router = APIRouter()
+def _prefix_from_name(name: str) -> str:
+    # take letters from words, collapse non-letters, first 3 upper
+    letters = re.sub(r'[^A-Za-z]+', ' ', name).strip().split()
+    base = ''.join(w[0] for w in letters) or name[:3]
+    return base.upper()[:3]
 
-def map_status_to_column_key(status: str) -> str:
-    s = (status or "").lower()
-    if s in ("to-do", "todo"): return "to-do"
-    if s in ("in-progress",): return "in-progress"
-    if s in ("validation",): return "validation"
-    if s in ("done",): return "done"
-    return "to-do"
 
-@router.get("/{project_id}/tasks", response_model=list[TaskOut])
-def list_tasks(
-    project_id: UUID,
-    status: str | None = Query(default=None),
-    assignee: str | None = Query(default=None),
-    q: str | None = Query(default=None),
+@router.post("/", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
+def create_task(
+    body: TaskCreate,
     db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
 ):
-    if not db.get(Project, project_id):
+    project = db.query(Project).filter(Project.id == body.project_id).first()
+    if not project:
         raise HTTPException(404, "Project not found")
 
-    stmt = select(Task).where(Task.project_id == project_id)
-    if status:
-        stmt = stmt.where(Task.column_key == map_status_to_column_key(status))
-    if assignee:
-        stmt = stmt.where(Task.assignee == assignee)
-    if q:
-        like = f"%{q}%"
-        stmt = stmt.where(Task.title.ilike(like))
-    tasks = db.execute(stmt.order_by(Task.created_at.desc())).scalars().all()
+    # 🧠 FIX: normalize the status before saving
+    allowed_statuses = {"to_do", "in_progress", "validation", "done"}
+    status_value = str(body.status)
+    if status_value not in allowed_statuses:
+        status_value = "to_do"  # fallback
 
-    return [
-        TaskOut(
-            id=str(t.id),
-            project=str(t.project_id),
-            title=t.title,
-            description=t.description,
-            acceptanceCriteria=t.acceptance_criteria,
-            assignee=t.assignee,
-            priority=t.priority,
-            architecture=t.architecture,
-            status=t.column_key,
-            storyId=t.story_id,
-            createdAt=t.created_at,
-            dueDate=t.due_date,
-            completedAt=t.completed_at,
-        )
-        for t in tasks
-    ]
-
-@router.post("/{project_id}/tasks", response_model=TaskOut, status_code=201)
-def create_task(project_id: UUID, payload: TaskCreate, db: Session = Depends(get_db)):
-    if not db.get(Project, project_id):
-        raise HTTPException(404, "Project not found")
-
-    col_key = map_status_to_column_key(payload.status)
-    if not db.query(BoardColumn).filter(BoardColumn.project_id==project_id, BoardColumn.key==col_key).first():
-        raise HTTPException(400, "Invalid column/status")
-
-    story_id = payload.storyId or next_story_id(db, project_id)
-    t = Task(
-        project_id=project_id,
-        column_key=col_key,
-        title=payload.title.strip(),
-        description=payload.description,
-        acceptance_criteria=payload.acceptanceCriteria,
-        assignee=payload.assignee,
-        priority=payload.priority,
-        architecture=payload.architecture,
-        story_id=story_id,
-        due_date=payload.dueDate,
+    new_task = Task(
+        title=body.title,
+        description=body.description,
+        status=status_value,
+        assignee=body.assignee,
+        project_id=body.project_id,
+        user_id=current_user.id,
     )
-    db.add(t); db.commit(); db.refresh(t)
+    prefix = _prefix_from_name(project.name)
 
-    return TaskOut(
-        id=str(t.id),
-        project=str(t.project_id),
-        title=t.title,
-        description=t.description,
-        acceptanceCriteria=t.acceptance_criteria,
-        assignee=t.assignee,
-        priority=t.priority,
-        architecture=t.architecture,
-        status=t.column_key,
-        storyId=t.story_id,
-        createdAt=t.created_at,
-        dueDate=t.due_date,
-        completedAt=t.completed_at,
+    # get next story number for this project
+    next_num = (
+        db.query(func.coalesce(func.max(Task.story_num), 0) + 1)
+        .filter(Task.project_id == body.project_id)
+        .scalar()
     )
 
-@router.patch("/{project_id}/tasks/{task_id}", response_model=TaskOut)
-def update_task(project_id: UUID, task_id: UUID, payload: TaskCreate, db: Session = Depends(get_db)):
-    t = db.get(Task, task_id)
-    if not t or str(t.project_id) != str(project_id):
-        raise HTTPException(404, "Task not found")
+    new_task.story_num = next_num
+    new_task.story_code = f"{prefix}-{next_num}"
+    db.add(new_task)
+    db.commit()
+    db.refresh(new_task)
+    return new_task
 
-    if payload.status:
-        t.column_key = map_status_to_column_key(payload.status)
-        if t.column_key == "done" and not t.completed_at:
-            t.completed_at = datetime.utcnow()
 
-    for field, source in [
-        ("title", payload.title),
-        ("description", payload.description),
-        ("assignee", payload.assignee),
-        ("priority", payload.priority),
-        ("architecture", payload.architecture),
-    ]:
-        if source is not None:
-            setattr(t, field, source)
-
-    if payload.acceptanceCriteria is not None:
-        t.acceptance_criteria = payload.acceptanceCriteria
-    if payload.dueDate is not None:
-        t.due_date = payload.dueDate
-
-    db.add(t); db.commit(); db.refresh(t)
-
-    return TaskOut(
-        id=str(t.id),
-        project=str(t.project_id),
-        title=t.title,
-        description=t.description,
-        acceptanceCriteria=t.acceptance_criteria,
-        assignee=t.assignee,
-        priority=t.priority,
-        architecture=t.architecture,
-        status=t.column_key,
-        storyId=t.story_id,
-        createdAt=t.created_at,
-        dueDate=t.due_date,
-        completedAt=t.completed_at,
+@router.get("/project/{project_id}", response_model=list[TaskOut])
+def get_tasks_for_project(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    rows = (
+        db.query(Task)
+        .filter(Task.project_id == project_id, Task.user_id == current_user.id)
+        .order_by(Task.created_at.desc())
+        .all()
     )
+    return rows
 
-@router.delete("/{project_id}/tasks/{task_id}", status_code=204)
-def delete_task(project_id: UUID, task_id: UUID, db: Session = Depends(get_db)):
-    t = db.get(Task, task_id)
-    if not t or str(t.project_id) != str(project_id):
-        raise HTTPException(404, "Task not found")
-    db.delete(t); db.commit()
-    return
+
+@router.patch("/{task_id}/status", response_model=TaskOut)
+def update_task_status(
+    task_id: UUID,
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Update only the task status (used when dragging cards between columns).
+    """
+    new_status = body.get("status")
+    if not new_status:
+        raise HTTPException(status_code=400, detail="Status is required")
+
+    task = (
+        db.query(Task)
+        .filter(Task.id == task_id, Task.user_id == current_user.id)
+        .first()
+    )
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Normalize underscores -> hyphens for backend consistency
+    status_value = str(new_status)
+    allowed_statuses = {"to_do", "in_progress", "validation", "done"}
+    if status_value not in allowed_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status '{new_status}'")
+
+    task.status = status_value
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    return task
