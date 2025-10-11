@@ -1,18 +1,21 @@
-from pydantic import BaseModel
 from typing import List, Optional
 from uuid import UUID
+from pydantic import BaseModel
+from app.schemas.column import BoardColumnOut
+from app.schemas.task import TaskOut
 
 class ProjectBase(BaseModel):
     name: str
     description: Optional[str] = None
 
 class ProjectCreate(ProjectBase):
-    """Schema used for creating a new project"""
     pass
 
 class ProjectOut(ProjectBase):
-    id: UUID  # or UUID if you prefer
-    columns: list[str] | None = None
+    id: UUID
+    columns: Optional[List[BoardColumnOut]] = None  
+    tasks: Optional[List[TaskOut]] = None   
+
 
     model_config = {
         "from_attributes": True,

@@ -1,19 +1,14 @@
-from sqlalchemy import Column as SAColumn, String, Integer, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, String, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from app.db.base import Base
 import uuid
 
 class BoardColumn(Base):
-    __tablename__ = "columns"
+    __tablename__ = "board_columns"
 
-    id = SAColumn(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)  # <-- UUID auto
-    project_id = SAColumn(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-
-    # slug like "to-do", "in-progress", etc.
-    key = SAColumn(String(64), nullable=False)                                # <-- store slug here
-    title = SAColumn(String(255), nullable=False)
-    pos = SAColumn(Integer, nullable=False, default=0)
-
-    __table_args__ = (
-        UniqueConstraint("project_id", "key", name="uq_columns_project_key"),  # no duplicates per project
-    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    key = Column(String(50), nullable=False)
+    title = Column(String(100), nullable=False)
+    pos = Column(Integer, nullable=False)
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)

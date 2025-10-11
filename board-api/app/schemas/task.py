@@ -1,31 +1,30 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
+from typing import Optional
+from app.models.task import TaskStatus
 
-class TaskCreate(BaseModel):
+
+class TaskBase(BaseModel):
     title: str
-    description: str | None = None
-    acceptanceCriteria: str | None = Field(None, alias="acceptanceCriteria")
-    assignee: str | None = None
-    priority: str = "Low"
-    architecture: str = "FE"
-    status: str = "to-do"
-    storyId: str | None = Field(None, alias="storyId")
-    dueDate: str | None = Field(None, alias="dueDate")
+    description: Optional[str] = None
+    status: TaskStatus = TaskStatus.to_do
+    assignee: Optional[str] = None
 
-    model_config = {"populate_by_name": True}
 
-class TaskOut(BaseModel):
-    id: str
-    project: str
-    title: str
-    description: str | None = None
-    acceptanceCriteria: str | None = None
-    assignee: str | None = None
-    priority: str
-    architecture: str
-    status: str
-    storyId: str
-    createdAt: datetime
-    dueDate: str | None = None
-    completedAt: datetime | None = None
+class TaskCreate(TaskBase):
+    project_id: UUID
+
+
+class TaskOut(TaskBase):
+    id: UUID
+    project_id: UUID
+    user_id: str | UUID  # ✅ allow both UUID and string
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+    story_code: Optional[str] = None
+
+    model_config = {
+        "from_attributes": True,
+        "arbitrary_types_allowed": True,  # ✅ important for UUID serialization
+    }

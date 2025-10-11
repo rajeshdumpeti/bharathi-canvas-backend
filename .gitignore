@@ -12,7 +12,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+*.dist-info/
 # IDE and editor settings
 .vscode/
 .idea/
@@ -60,6 +60,7 @@ build/
 *.eggs/
 *.manifest
 *.spec
+*.whl
 
 # Local artifacts
 *.db

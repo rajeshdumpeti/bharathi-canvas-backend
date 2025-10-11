@@ -4,8 +4,8 @@ from app.models.project import Project
 from app.models.column import BoardColumn
 
 DEFAULT_COLS = [
-    ("to-do", "To Do", 0),
-    ("in-progress", "In Progress", 1),
+    ("to_do", "To Do", 0),
+    ("in_progress", "In Progress", 1),
     ("validation", "Validation", 2),
     ("done", "Done", 3),
 ]
