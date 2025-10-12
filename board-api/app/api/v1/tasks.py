@@ -35,6 +35,8 @@ def create_task(
     new_task = Task(
         title=body.title,
         description=body.description,
+        acceptance_criteria=body.acceptance_criteria,
+        priority=body.priority,  
         status=status_value,
         assignee=body.assignee,
         project_id=body.project_id,
@@ -101,6 +103,42 @@ def update_task_status(
         raise HTTPException(status_code=400, detail=f"Invalid status '{new_status}'")
 
     task.status = status_value
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    return task
+
+
+@router.patch("/{task_id}", response_model=TaskOut)
+def update_task(
+    task_id: UUID,
+    body: TaskCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Update all editable fields of a task."""
+    task = (
+        db.query(Task)
+        .filter(Task.id == task_id, Task.user_id == current_user.id)
+        .first()
+    )
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    allowed_statuses = {"to_do", "in_progress", "validation", "done"}
+    new_status = str(body.status)
+    if new_status not in allowed_statuses:
+        new_status = "to_do"
+
+    # Update fields
+    task.title = body.title
+    task.description = body.description
+    task.acceptance_criteria = body.acceptance_criteria
+    task.assignee = body.assignee
+    task.status = new_status
+    task.priority = body.priority
+    task.project_id = body.project_id
+
     db.add(task)
     db.commit()
     db.refresh(task)

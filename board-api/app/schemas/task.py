@@ -10,7 +10,8 @@ class TaskBase(BaseModel):
     description: Optional[str] = None
     status: TaskStatus = TaskStatus.to_do
     assignee: Optional[str] = None
-
+    acceptance_criteria: Optional[str] = None  
+    priority: Optional[str] = None    
 
 class TaskCreate(TaskBase):
     project_id: UUID
