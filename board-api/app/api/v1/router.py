@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from . import projects, columns, tasks
+from . import projects, columns, tasks, features
 from app.auth.routes import router as auth_router
 
 
@@ -9,6 +9,8 @@ api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_router.include_router(projects.router)
 api_router.include_router(tasks.router)
 api_router.include_router(columns.router)
+api_router.include_router(features.router)
+
 
 api_router.include_router(tasks.router, prefix="/projects", tags=["tasks"])
 
