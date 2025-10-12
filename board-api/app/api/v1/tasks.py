@@ -40,6 +40,7 @@ def create_task(
         status=status_value,
         assignee=body.assignee,
         project_id=body.project_id,
+        feature_id = body.feature_id,
         user_id=current_user.id,
     )
     prefix = _prefix_from_name(project.name)
@@ -138,6 +139,8 @@ def update_task(
     task.status = new_status
     task.priority = body.priority
     task.project_id = body.project_id
+    task.feature_id = body.feature_id,
+    
 
     db.add(task)
     db.commit()

@@ -15,11 +15,12 @@ class TaskBase(BaseModel):
 
 class TaskCreate(TaskBase):
     project_id: UUID
-
+    feature_id: Optional[UUID] = None  
 
 class TaskOut(TaskBase):
     id: UUID
     project_id: UUID
+    feature_id: Optional[UUID] = None  
     user_id: str | UUID  # ✅ allow both UUID and string
     created_at: datetime
     completed_at: Optional[datetime] = None
