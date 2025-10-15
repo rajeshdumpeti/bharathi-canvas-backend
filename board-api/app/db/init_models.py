@@ -8,6 +8,8 @@ from app.models.project import Project
 from app.models.column import BoardColumn
 from app.models.task import Task
 from app.models.document import Document
+from app.models.project_hub import ProjectHubSection
+
 
 def init_db():
     """Create all database tables."""
