@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.auth.routes import router as auth_router
 from . import projects, columns, tasks, features # Board API imports
 from . import documents    # Document API
-
+from . import projecthub
 
 api_router = APIRouter()
 
@@ -16,6 +16,9 @@ api_router.include_router(features.router)
 
 # Documents API
 api_router.include_router(documents.router)
+
+# Project Hub API 
+api_router.include_router(projecthub.router)
 
 
 api_router.include_router(tasks.router, prefix="/projects", tags=["tasks"])
