@@ -10,15 +10,17 @@ class TaskBase(BaseModel):
     description: Optional[str] = None
     status: TaskStatus = TaskStatus.to_do
     assignee: Optional[str] = None
-
+    acceptance_criteria: Optional[str] = None  
+    priority: Optional[str] = None    
 
 class TaskCreate(TaskBase):
     project_id: UUID
-
+    feature_id: Optional[UUID] = None  
 
 class TaskOut(TaskBase):
     id: UUID
     project_id: UUID
+    feature_id: Optional[UUID] = None  
     user_id: str | UUID  # ✅ allow both UUID and string
     created_at: datetime
     completed_at: Optional[datetime] = None
