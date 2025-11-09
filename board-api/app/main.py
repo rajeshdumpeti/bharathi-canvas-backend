@@ -22,7 +22,8 @@ app.add_middleware(
     allow_origins=_parse_cors(getattr(settings, "cors_origins", [])) or [
         "http://localhost:3000",
         "http://localhost:5173",
-        'https://bharathi-canvas.onrender.com'
+        'https://bharathi-canvas.vercel.app',
+        'https://tst-bharathi-canvas.vercel.app'
     ],
     allow_credentials=True,
     allow_methods=["*"],
