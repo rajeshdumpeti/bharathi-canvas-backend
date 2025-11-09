@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.api.v1.router import api_router
 
-# --- NEW: create tables on startup ---
+# (Your other imports...)
 from app.db.session import engine
 from app.db.base import Base
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +13,6 @@ app = FastAPI(title="Bharathi Canvas API", version="1.0", debug=True)
 
 def _parse_cors(origins):
     if isinstance(origins, str):
-        # supports comma-separated values in .env (e.g., http://localhost:3000,http://localhost:5173)
         return [o.strip() for o in origins.split(",") if o.strip()]
     return origins or []
 
@@ -22,12 +21,17 @@ app.add_middleware(
     allow_origins=_parse_cors(getattr(settings, "cors_origins", [])) or [
         "http://localhost:3000",
         "http://localhost:5173",
-        'https://bharathi-canvas.vercel.app',     
-        'https://tst-bharathi-canvas.vercel.app'  
+        'https://bharathi-canvas.vercel.app',
+        'https://tst-bharathis-canvas.vercel.app'
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # <-- FIXED
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Origin",
+    ],  
     expose_headers=["*"],
 )
 
