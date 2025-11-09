@@ -24,8 +24,9 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: List[AnyHttpUrl] | List[str] = os.getenv(
         "CORS_ORIGINS",
-        "http://localhost:3000,https://bharathi-canvas-frontend.onrender.com"
+        "http://localhost:3000,https://bharathi-canvas.vercel.app"
     )
+    
 
     @field_validator("database_url", mode="before")
     @classmethod
