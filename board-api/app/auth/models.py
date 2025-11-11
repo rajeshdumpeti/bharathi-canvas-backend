@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean
+from sqlalchemy import Column, DateTime, String, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.base import Base
 import uuid
@@ -13,3 +13,5 @@ class User(Base):
     last_name  = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
+    reset_password_token = Column(String, index=True, nullable=True) 
+    reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)
