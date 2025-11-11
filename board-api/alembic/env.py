@@ -5,6 +5,10 @@ from sqlalchemy import create_engine, pool
 from alembic import context
 from dotenv import load_dotenv  # <-- add this line
 
+from app.db.base import Base
+from app.core.config import settings
+from app.auth.models import User
+from app.models import column, document, feature, project, project_hub, story_seq, task
 # load env
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
@@ -12,8 +16,6 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from app.db.base import Base
-from app.core.config import settings
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 

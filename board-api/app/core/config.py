@@ -27,6 +27,11 @@ class Settings(BaseSettings):
         "http://localhost:3000,https://bharathi-canvas.vercel.app"
     )
     
+    # Brevo Email Service
+    brevo_api_key: str = os.getenv("BREVO_API_KEY", "")
+    email_from_address: str = os.getenv("EMAIL_FROM_ADDRESS", "noreply@example.com")
+    email_from_name: str = os.getenv("EMAIL_FROM_NAME", "Bharathi's Canvas")
+    frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
     @field_validator("database_url", mode="before")
     @classmethod
