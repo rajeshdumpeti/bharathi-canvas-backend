@@ -7,7 +7,7 @@ from app.auth.models import User
 from app.services.email_service import send_password_reset_email
 
 # --- 1. Import password utils from your central security file ---
-from app.utils.security import hash_password
+from app.auth.utils import hash_password
 
 # (We don't need verify_password for this flow, but if we did, we'd import it here too)
 
@@ -76,41 +76,54 @@ async def perform_password_reset(token: str, new_password: str, db: Session) -> 
     Handles the "Reset Password" submission.
     Validates the token, checks expiry, and updates the password.
     """
+    print("--- [perform_password_reset] START ---")
     try:
-        # 1. Hash the incoming plain-text token to find it in the DB
+        # 1. Hash the incoming plain-text token
         hashed_token = get_token_hash(token)
+        print(f"Frontend Token: {token}")
+        print(f"Hashed Token: {hashed_token}")
 
         # 2. Find the user by the *hashed* token
         user = db.query(User).filter(
             User.reset_password_token == hashed_token
         ).first()
 
-        # 3. Check if token is valid or expired
+        # 3. Check if token is valid
         if not user:
-            print("Password reset attempt with invalid token.")
+            print("!!! ERROR: User not found with that token hash.")
+            print("--- [perform_password_reset] END (FAIL) ---")
             return False # Token not found
 
+        print(f"User found: {user.email}")
+        print(f"Token Expiry Time (from DB): {user.reset_token_expires_at}")
+        print(f"Current Time (UTC): {datetime.now(timezone.utc)}")
+
+        # 4. Check if expired
         if user.reset_token_expires_at <= datetime.now(timezone.utc):
-            print(f"Password reset attempt with expired token for user {user.email}")
-            # Clear the expired token
+            print(f"!!! ERROR: Token is expired.")
             user.reset_password_token = None
             user.reset_token_expires_at = None
             db.commit()
+            print("--- [perform_password_reset] END (FAIL) ---")
             return False # Token expired
 
-        # 4. Token is valid. Update the password.
-        #    We use the imported hash_password function from security.py
+        print("Token is valid and not expired. Updating password...")
+        
+        # 5. Token is valid. Update the password.
         user.hashed_password = hash_password(new_password)
         
-        # 5. Invalidate the token so it can't be used again.
+        # 6. Invalidate the token
         user.reset_password_token = None
         user.reset_token_expires_at = None
         
-        db.commit()
-        print(f"Password successfully reset for user {user.email}")
+        db.commit() # Try to save
+        
+        print("Password successfully reset and saved.")
+        print("--- [perform_password_reset] END (SUCCESS) ---")
         return True
 
     except Exception as e:
-        print(f"Error in perform_password_reset: {e}")
+        print(f"!!! ERROR: An exception occurred: {e}")
         db.rollback()
+        print("--- [perform_password_reset] END (FAIL) ---")
         return False
